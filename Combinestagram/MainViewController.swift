@@ -16,11 +16,20 @@ class MainViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    images.subscribe { [weak imagePreview] photos in
+      guard let preview = imagePreview else { return }
+      preview.image = photos.collage(size: preview.frame.size)
+    }
+    .disposed(by: bag)
 
+    images.subscribe { [weak self] photos in
+      self?.updateUI(photos: photos)
+    }
+    .disposed(by: bag)
   }
   
   @IBAction func actionClear() {
-
+    images.accept([])
   }
 
   @IBAction func actionSave() {
@@ -28,12 +37,27 @@ class MainViewController: UIViewController {
   }
 
   @IBAction func actionAdd() {
-
+    guard let imageNamed = UIImage(named: "IMG_1907.jpg") else {
+      return
+    }
+    let newImages = images.value + [imageNamed]
+    images.accept(newImages)
   }
 
   func showMessage(_ title: String, description: String? = nil) {
     let alert = UIAlertController(title: title, message: description, preferredStyle: .alert)
     alert.addAction(UIAlertAction(title: "Close", style: .default, handler: { [weak self] _ in self?.dismiss(animated: true, completion: nil)}))
     present(alert, animated: true, completion: nil)
+  }
+  
+  private func updateUI(photos: [UIImage]) {
+    
+    // amount of photos should be more than 0 and must be odd to not have empty space
+    buttonSave.isEnabled = photos.count > 0 && photos.count % 2 == 0
+    
+    buttonClear.isEnabled = photos.count > 0
+    
+    itemAdd.isEnabled = photos.count < 6
+    title = photos.count > 0 ? "\(photos.count) photos" : "Collage"
   }
 }
